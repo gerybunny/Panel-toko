@@ -27,17 +27,34 @@
         .val.omzet { color: #28a745; }
         .val.untung { color: #ff9800; }
 
-        /* RIWAYAT TRANSAKSI */
-        .riwayat-item { background: #fff; border: 1px solid #e0e0e0; border-left: 4px solid #128C7E; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; }
+        /* NAVIGASI TAB STATUS */
+        .tab-status-container { display: flex; gap: 4px; background: #e0e0e0; padding: 4px; border-radius: 8px; margin-bottom: 10px; }
+        .btn-tab { flex: 1; padding: 8px 4px; border: none; background: transparent; font-size: 11px; font-weight: bold; border-radius: 6px; cursor: pointer; color: #555; text-align: center; }
+        .btn-tab.aktif { background: #white; background: #fff; color: #128C7E; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .badge-tab { background: #dc3545; color: white; border-radius: 10px; padding: 1px 5px; font-size: 9px; margin-left: 2px; }
+
+        /* CARD ITEM PESANAN */
+        .riwayat-item { background: #fff; border: 1px solid #e0e0e0; border-left: 5px solid #128C7E; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; }
+        .riwayat-item.st-baru { border-left-color: #dc3545; background: #fff9f9; }
+        .riwayat-item.st-proses { border-left-color: #ff9800; background: #fffdf5; }
+        .riwayat-item.st-selesai { border-left-color: #28a745; }
+
         .riwayat-top { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 4px; }
-        .tag-jenis { background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+        .tag-status { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .tag-status.BARU { background: #ffebee; color: #c62828; }
+        .tag-status.DIPROSES { background: #fff3cd; color: #856404; }
+        .tag-status.SELESAI { background: #e8f5e9; color: #2e7d32; }
+
         .riwayat-tgl { font-size: 11px; color: #777; margin-bottom: 6px; }
         .riwayat-detail { background: #f8f9fa; padding: 6px; border-radius: 6px; margin: 6px 0; color: #444; }
 
         /* TOMBOL AKSI */
-        .grup-tombol-item { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #eee; }
-        .btn-cetak { background: #128C7E; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; }
-        .btn-hapus-satuan { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; }
+        .grup-tombol-item { display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #eee; flex-wrap: wrap; }
+        .btn-aksi { border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; }
+        .btn-proses { background: #ff9800; color: white; }
+        .btn-selesai { background: #28a745; color: white; }
+        .btn-cetak { background: #128C7E; color: white; }
+        .btn-hapus-satuan { background: #dc3545; color: white; }
         .btn-hapus-semua { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
         .btn-muat { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; margin-top: 5px; }
@@ -85,11 +102,17 @@
 
 <div class="kartu">
     <div class="judul-bagian">
-        <span>RIWAYAT TRANSAKSI</span>
-        <div>
-            <button class="btn-hapus-semua" onclick="konfirmasiHapusSemua()">🗑️ Hapus Semua</button>
-        </div>
+        <span>KELOLA PESANAN</span>
+        <button class="btn-hapus-semua" onclick="konfirmasiHapusSemua()">🗑️ Hapus Semua</button>
     </div>
+
+    <!-- TAB FILTER STATUS -->
+    <div class="tab-status-container">
+        <button class="btn-tab aktif" onclick="gantiTabStatus('BARU', this)">🆕 Baru <span class="badge-tab" id="jmlBaru">0</span></button>
+        <button class="btn-tab" onclick="gantiTabStatus('DIPROSES', this)">⏳ Diproses <span class="badge-tab" style="background:#ff9800;" id="jmlProses">0</span></button>
+        <button class="btn-tab" onclick="gantiTabStatus('SELESAI', this)">✅ Selesai</button>
+    </div>
+
     <div id="daftarRiwayat"></div>
     <button class="btn-muat" id="btnMuatLagi" onclick="muatLebihBanyak()" style="display:none;">MUAT LEBIH BANYAK...</button>
 </div>
@@ -97,10 +120,11 @@
 <div id="areaStruk" style="display:none;"></div>
 
 <script>
-const URL_PENYIMPANAN = "https://script.google.com/macros/s/AKfycbwTQEolvUobuRORHvYgF32FtTewxQBHyfbcIIiXK-QSeRhmhiPSQQ9JprGlENv2mKTz/exec";
+const URL_PENYIMPANAN = "https://script.google.com/macros/s/AKfycbzCHkAsBackskPbhrPJKClj31_8unXGdNw79uhlpzFTeE242OZtS4_Yj9S6zxNGPefV/exec";
 
 let riwayatData = [];
 let periodeAktif = 'hari';
+let tabStatusAktif = 'BARU';
 let tampilSampai = 10;
 let jumlahSebelumnya = 0;
 
@@ -133,7 +157,6 @@ async function muatData() {
 
         if (jumlahSebelumnya > 0 && dataBaru.length > jumlahSebelumnya) {
             bunyikanNotifikasi();
-            // Jika berjalan di APK Android
             if (typeof AndroidPanel !== 'undefined' && AndroidPanel.bunyikanNotifikasiBaru) {
                 AndroidPanel.bunyikanNotifikasiBaru(dataBaru[0].namaPelanggan || "Pelanggan", "Rp " + (dataBaru[0].total||0).toLocaleString('id-ID'));
             }
@@ -145,6 +168,7 @@ async function muatData() {
         statusEl.textContent = "🟢 Terhubung (" + new Date().toLocaleTimeString('id-ID') + ")";
         statusEl.style.background = "rgba(40,167,69,0.3)";
 
+        renderHitunganBadge();
         renderLaporan();
         renderRiwayat();
     } catch (e) {
@@ -153,15 +177,24 @@ async function muatData() {
     }
 }
 
+function renderHitunganBadge() {
+    const jmlBaru = riwayatData.filter(r => (r.status || 'BARU') === 'BARU').length;
+    const jmlProses = riwayatData.filter(r => r.status === 'DIPROSES').length;
+    document.getElementById('jmlBaru').textContent = jmlBaru;
+    document.getElementById('jmlProses').textContent = jmlProses;
+}
+
 function renderLaporan() {
     let skrg = new Date(), batas = new Date();
     if (periodeAktif === 'hari') batas = new Date(skrg.getFullYear(), skrg.getMonth(), skrg.getDate());
     else if (periodeAktif === 'minggu') batas.setDate(skrg.getDate() - 7);
     else batas.setDate(skrg.getDate() - 30);
 
+    // Laporan hanya menghitung pesanan yang sudah 'SELESAI'
     let filter = riwayatData.filter(r => {
         const tgl = r.tanggalSimpan ? new Date(r.tanggalSimpan) : null;
-        return tgl && !isNaN(tgl.getTime()) && tgl >= batas;
+        const status = r.status || 'BARU';
+        return tgl && !isNaN(tgl.getTime()) && tgl >= batas && status === 'SELESAI';
     });
 
     const omzet = filter.reduce((sum, r) => sum + (Number(r.total) || 0), 0);
@@ -179,30 +212,48 @@ function gantiPeriode(p, btn) {
     renderLaporan();
 }
 
+function gantiTabStatus(st, btn) {
+    tabStatusAktif = st;
+    document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('aktif'));
+    btn.classList.add('aktif');
+    tampilSampai = 10;
+    renderRiwayat();
+}
+
 function renderRiwayat() {
     const wadah = document.getElementById('daftarRiwayat');
     const btnMuat = document.getElementById('btnMuatLagi');
 
-    if (riwayatData.length === 0) {
-        wadah.innerHTML = '<p style="text-align:center; color:#888; padding:20px;">Belum ada riwayat transaksi.</p>';
+    // Filter berdasarkan tab status aktif
+    const dataFiltered = riwayatData.filter(p => (p.status || 'BARU') === tabStatusAktif);
+
+    if (dataFiltered.length === 0) {
+        wadah.innerHTML = `<p style="text-align:center; color:#888; padding:25px;">Tidak ada pesanan dengan status <b>${tabStatusAktif}</b>.</p>`;
         btnMuat.style.display = 'none';
         return;
     }
 
-    const itemTampil = riwayatData.slice(0, tampilSampai);
+    const itemTampil = dataFiltered.slice(0, tampilSampai);
     wadah.innerHTML = itemTampil.map((p) => {
-        const jenis = (p.jenis || "PESANAN").toUpperCase();
+        const st = p.status || 'BARU';
         const nama = p.namaPelanggan || "Pelanggan";
         const barisKe = p.barisKe || p.barisAsliDiSheet;
         const barangTeks = Array.isArray(p.barang) 
             ? p.barang.map(b => `• ${b.nama} (${b.jumlah}x)`).join('<br>') 
             : "";
 
+        let tombolStatus = "";
+        if (st === 'BARU') {
+            tombolStatus = `<button class="btn-aksi btn-proses" onclick="ubahStatus(${barisKe}, 'DIPROSES')">⏳ Proses</button>`;
+        } else if (st === 'DIPROSES') {
+            tombolStatus = `<button class="btn-aksi btn-selesai" onclick="ubahStatus(${barisKe}, 'SELESAI')">✅ Selesai</button>`;
+        }
+
         return `
-            <div class="riwayat-item">
+            <div class="riwayat-item st-${st.toLowerCase()}">
                 <div class="riwayat-top">
                     <span>${nama}</span>
-                    <span class="tag-jenis">${jenis}</span>
+                    <span class="tag-status ${st}">${st}</span>
                 </div>
                 <div class="riwayat-tgl">📅 ${p.tanggal || '-'}</div>
                 <div style="color:#666; font-size:11px;">📍 ${p.infoTambahan || '-'}</div>
@@ -212,14 +263,15 @@ function renderRiwayat() {
                     <span style="color:#ff9800; font-weight:bold;">Laba: Rp ${(p.untung||0).toLocaleString('id-ID')}</span>
                 </div>
                 <div class="grup-tombol-item">
-                    <button class="btn-hapus-satuan" onclick="hapusRiwayatSatuan(${barisKe}, '${nama}')">🗑️ Hapus</button>
-                    <button class="btn-cetak" onclick="cetakStruk(${barisKe})">🖨️ Cetak Struk</button>
+                    <button class="btn-aksi btn-hapus-satuan" onclick="hapusRiwayatSatuan(${barisKe}, '${nama}')">🗑️ Hapus</button>
+                    <button class="btn-aksi btn-cetak" onclick="cetakStruk(${barisKe})">🖨️ Cetak Struk</button>
+                    ${tombolStatus}
                 </div>
             </div>
         `;
     }).join('');
 
-    btnMuat.style.display = tampilSampai < riwayatData.length ? 'block' : 'none';
+    btnMuat.style.display = tampilSampai < dataFiltered.length ? 'block' : 'none';
 }
 
 function muatLebihBanyak() {
@@ -227,7 +279,31 @@ function muatLebihBanyak() {
     renderRiwayat();
 }
 
-// === FUNGSI HAPUS SATUAN (BARIS TERPILIH) ===
+// === FUNGSI UBAH STATUS PESANAN ===
+async function ubahStatus(barisKe, statusBaru) {
+    document.getElementById('statusCek').textContent = "⏳ Memperbarui...";
+    try {
+        await fetch(URL_PENYIMPANAN, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ aksi: "ubahStatusPesanan", data: { barisKe: barisKe, status: statusBaru } })
+        });
+
+        // Update lokal biar responsif cepat
+        const item = riwayatData.find(r => (r.barisKe || r.barisAsliDiSheet) === barisKe);
+        if (item) item.status = statusBaru;
+
+        renderHitunganBadge();
+        renderLaporan();
+        renderRiwayat();
+        muatData();
+    } catch (e) {
+        alert("Gagal mengubah status!");
+    }
+}
+
+// === FUNGSI HAPUS SATUAN ===
 async function hapusRiwayatSatuan(barisKe, nama) {
     const yakin = confirm(`Yakin ingin menghapus riwayat pesanan dari "${nama}"?`);
     if (!yakin) return;
@@ -276,13 +352,11 @@ TOTAL BAYAR : Rp ${(p.total||0).toLocaleString('id-ID')}
 ================================
 \n\n\n`;
 
-    // Jika dipanggil dari APK Android Studio
     if (typeof AndroidPanel !== 'undefined' && AndroidPanel.cetakBluetooth) {
         AndroidPanel.cetakBluetooth(teksStruk);
         return;
     }
 
-    // Jika lewat Browser Biasa
     const areaStruk = document.getElementById('areaStruk');
     areaStruk.style.display = 'block';
     areaStruk.innerHTML = `<pre>${teksStruk}</pre>`;
@@ -314,6 +388,7 @@ async function konfirmasiHapusSemua() {
         alert("Semua riwayat transaksi berhasil dihapus!");
         riwayatData = [];
         jumlahSebelumnya = 0;
+        renderHitunganBadge();
         renderLaporan();
         renderRiwayat();
         muatData();
