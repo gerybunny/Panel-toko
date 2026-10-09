@@ -30,8 +30,20 @@
         /* NAVIGASI TAB STATUS */
         .tab-status-container { display: flex; gap: 4px; background: #e0e0e0; padding: 4px; border-radius: 8px; margin-bottom: 10px; }
         .btn-tab { flex: 1; padding: 8px 4px; border: none; background: transparent; font-size: 11px; font-weight: bold; border-radius: 6px; cursor: pointer; color: #555; text-align: center; }
-        .btn-tab.aktif { background: #white; background: #fff; color: #128C7E; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn-tab.aktif { background: #fff; color: #128C7E; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .badge-tab { background: #dc3545; color: white; border-radius: 10px; padding: 1px 5px; font-size: 9px; margin-left: 2px; }
+
+        /* AREA SCROLL VIEW (MEMBATASI TINGGI ± 5 TRANSAKSI) */
+        .scroll-view-container {
+            max-height: 480px;
+            overflow-y: auto;
+            padding-right: 4px;
+            scroll-behavior: smooth;
+        }
+
+        .scroll-view-container::-webkit-scrollbar { width: 5px; }
+        .scroll-view-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .scroll-view-container::-webkit-scrollbar-thumb { background: #128C7E; border-radius: 4px; }
 
         /* CARD ITEM PESANAN */
         .riwayat-item { background: #fff; border: 1px solid #e0e0e0; border-left: 5px solid #128C7E; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; }
@@ -57,13 +69,29 @@
         .btn-hapus-satuan { background: #dc3545; color: white; }
         .btn-hapus-semua { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
-        .btn-muat { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; margin-top: 5px; }
         .btn-suara { background: #ff9800; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
 
+        /* PERBAIKAN FORMAT CETAK STRUK PRINTER THERMAL 58MM */
         @media print {
             body * { visibility: hidden; }
             #areaStruk, #areaStruk * { visibility: visible; }
-            #areaStruk { position: absolute; left: 0; top: 0; width: 100%; font-family: monospace; font-size: 12px; }
+            #areaStruk { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                max-width: 58mm;
+                font-family: 'Courier New', Courier, monospace; 
+                font-size: 12px; 
+                line-height: 1.2;
+                font-weight: bold;
+                color: #000;
+            }
+            #areaStruk pre {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                margin: 0;
+            }
         }
     </style>
 </head>
@@ -113,19 +141,18 @@
         <button class="btn-tab" onclick="gantiTabStatus('SELESAI', this)">✅ Selesai</button>
     </div>
 
-    <div id="daftarRiwayat"></div>
-    <button class="btn-muat" id="btnMuatLagi" onclick="muatLebihBanyak()" style="display:none;">MUAT LEBIH BANYAK...</button>
+    <!-- CONTAINER DENGAN FITUR SCROLL VIEW -->
+    <div class="scroll-view-container" id="daftarRiwayat"></div>
 </div>
 
 <div id="areaStruk" style="display:none;"></div>
 
 <script>
-const URL_PENYIMPANAN = "https://script.google.com/macros/s/AKfycbzCHkAsBackskPbhrPJKClj31_8unXGdNw79uhlpzFTeE242OZtS4_Yj9S6zxNGPefV/exec";
+const URL_PENYIMPANAN = "https://script.google.com/macros/s/AKfycbwTQEolvUobuRORHvYgF32FtTewxQBHyfbcIIiXK-QSeRhmhiPSQQ9JprGlENv2mKTz/exec";
 
 let riwayatData = [];
 let periodeAktif = 'hari';
 let tabStatusAktif = 'BARU';
-let tampilSampai = 10;
 let jumlahSebelumnya = 0;
 
 function bunyikanNotifikasi() {
@@ -190,7 +217,6 @@ function renderLaporan() {
     else if (periodeAktif === 'minggu') batas.setDate(skrg.getDate() - 7);
     else batas.setDate(skrg.getDate() - 30);
 
-    // Laporan hanya menghitung pesanan yang sudah 'SELESAI'
     let filter = riwayatData.filter(r => {
         const tgl = r.tanggalSimpan ? new Date(r.tanggalSimpan) : null;
         const status = r.status || 'BARU';
@@ -216,25 +242,19 @@ function gantiTabStatus(st, btn) {
     tabStatusAktif = st;
     document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('aktif'));
     btn.classList.add('aktif');
-    tampilSampai = 10;
     renderRiwayat();
 }
 
 function renderRiwayat() {
     const wadah = document.getElementById('daftarRiwayat');
-    const btnMuat = document.getElementById('btnMuatLagi');
-
-    // Filter berdasarkan tab status aktif
     const dataFiltered = riwayatData.filter(p => (p.status || 'BARU') === tabStatusAktif);
 
     if (dataFiltered.length === 0) {
         wadah.innerHTML = `<p style="text-align:center; color:#888; padding:25px;">Tidak ada pesanan dengan status <b>${tabStatusAktif}</b>.</p>`;
-        btnMuat.style.display = 'none';
         return;
     }
 
-    const itemTampil = dataFiltered.slice(0, tampilSampai);
-    wadah.innerHTML = itemTampil.map((p) => {
+    wadah.innerHTML = dataFiltered.map((p) => {
         const st = p.status || 'BARU';
         const nama = p.namaPelanggan || "Pelanggan";
         const barisKe = p.barisKe || p.barisAsliDiSheet;
@@ -270,13 +290,6 @@ function renderRiwayat() {
             </div>
         `;
     }).join('');
-
-    btnMuat.style.display = tampilSampai < dataFiltered.length ? 'block' : 'none';
-}
-
-function muatLebihBanyak() {
-    tampilSampai += 10;
-    renderRiwayat();
 }
 
 // === FUNGSI UBAH STATUS PESANAN ===
@@ -290,7 +303,6 @@ async function ubahStatus(barisKe, statusBaru) {
             body: JSON.stringify({ aksi: "ubahStatusPesanan", data: { barisKe: barisKe, status: statusBaru } })
         });
 
-        // Update lokal biar responsif cepat
         const item = riwayatData.find(r => (r.barisKe || r.barisAsliDiSheet) === barisKe);
         if (item) item.status = statusBaru;
 
@@ -325,7 +337,7 @@ async function hapusRiwayatSatuan(barisKe, nama) {
     }
 }
 
-// === FUNGSI CETAK STRUK ===
+// === FUNGSI CETAK STRUK PRINTER THERMAL (BEBAS URL PANJANG) ===
 function cetakStruk(barisKe) {
     const p = riwayatData.find(item => (item.barisKe || item.barisAsliDiSheet) === barisKe);
     if (!p) return;
@@ -337,13 +349,17 @@ function cetakStruk(barisKe) {
         });
     }
 
+    // Pembersihan URL Google Maps agar cetakan kertas thermal penuhh/lebar & tulisan besar
+    let alamatBersih = p.infoTambahan || '-';
+    alamatBersih = alamatBersih.replace(/https?:\/\/[^\s]+/g, '').trim();
+
     const teksStruk = `
 ================================
         TOKO BP. AMAN
 ================================
 Waktu : ${p.tanggal || '-'}
 Nama  : ${p.namaPelanggan || '-'}
-Alamat: ${p.infoTambahan || '-'}
+Alamat: ${alamatBersih}
 --------------------------------
 ${rincianBarang}--------------------------------
 TOTAL BAYAR : Rp ${(p.total||0).toLocaleString('id-ID')}
