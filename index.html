@@ -83,7 +83,7 @@
 
         /* MODAL POPUP */
         .penutup-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; display: none; }
-        .kotak-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; width: 90%; max-width: 420px; border-radius: 10px; padding: 15px; z-index: 1000; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .kotak-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; width: 92%; max-width: 440px; border-radius: 10px; padding: 15px; z-index: 1000; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
         .kepala-modal-p { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; font-weight: bold; color: #128C7E; }
         .form-group-edit { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
         .form-group-edit label { font-size: 11px; font-weight: bold; color: #555; }
@@ -186,7 +186,7 @@
     <div class="scroll-view-container" style="max-height:300px;" id="isiModalBarangHabis"></div>
 </div>
 
-<!-- MODAL EDIT PRODUK -->
+<!-- MODAL EDIT PRODUK (KOLOM DILENGKAPI SAMA PERSIS SEPERTI WEB TOKO UTAMA) -->
 <div id="penutupModalEdit" class="penutup-modal" onclick="tutupModalEdit()"></div>
 <div id="kotakModalEdit" class="kotak-modal">
     <div class="kepala-modal-p">
@@ -195,23 +195,35 @@
     </div>
     <div class="form-group-edit">
         <label>Nama Barang:</label>
-        <input type="text" id="editNamaBarang" readonly style="background:#eee;">
+        <input type="text" id="editNamaBarang" placeholder="Nama barang">
         
-        <label>Stok Saat Ini:</label>
-        <input type="number" id="editStok" placeholder="0">
+        <label>Satuan Besar:</label>
+        <input type="text" id="editSatuanBesar" placeholder="Satuan Besar: Dus / Pak / Krat">
         
-        <label>Harga Satuan Eceran (Rp):</label>
-        <input type="number" id="editHargaSatuan" placeholder="0">
+        <label>Modal Beli per pcs (Rp):</label>
+        <input type="number" id="editModalBeli" placeholder="Modal beli per pcs">
         
-        <label>Harga Grosir (Rp):</label>
-        <input type="number" id="editHargaGrosir" placeholder="0">
-
-        <label>Harga Dus/Pak (Rp):</label>
-        <input type="number" id="editHargaDus" placeholder="0">
+        <label>Harga Eceran per pcs (Rp):</label>
+        <input type="number" id="editHargaSatuan" placeholder="Harga eceran per pcs">
+        
+        <label>Harga Grosir per pcs (Rp):</label>
+        <input type="number" id="editHargaGrosir" placeholder="Harga grosir per pcs">
+        
+        <label>Minimal Jumlah Grosir (Pcs):</label>
+        <input type="number" id="editMinGrosir" placeholder="Minimal jumlah grosir">
+        
+        <label>Harga per Dus/Pak (Rp):</label>
+        <input type="number" id="editHargaDus" placeholder="Harga per Dus/Pak">
+        
+        <label>Isi per Dus/Pak (Pcs):</label>
+        <input type="number" id="editIsiPerDus" placeholder="Isi per Dus/Pak">
+        
+        <label>Jumlah Stok:</label>
+        <input type="number" id="editStokBarang" placeholder="Jumlah stok">
     </div>
-    <div style="display:flex; gap:8px;">
+    <div style="display:flex; gap:8px; margin-top:10px;">
         <button class="btn-periode" style="border-color:#6c757d; color:#6c757d;" onclick="tutupModalEdit()">Batal</button>
-        <button class="btn-periode aktif" onclick="simpanPerubahanProduk()">💾 Simpan Data</button>
+        <button class="btn-periode aktif" onclick="simpanPerubahanProduk()">💾 SIMPAN PERUBAHAN</button>
     </div>
 </div>
 
@@ -376,11 +388,16 @@ function bukaModalEdit(idx) {
     const p = produkData[idx];
     if (!p) return;
 
+    document.getElementById('judulModalEdit').textContent = "Ubah Barang: " + (p.nama || '');
     document.getElementById('editNamaBarang').value = p.nama || '';
-    document.getElementById('editStok').value = p.stok !== undefined ? p.stok : '';
-    document.getElementById('editHargaSatuan').value = p.hargaSatuan || '';
-    document.getElementById('editHargaGrosir').value = p.hargaGrosir || '';
-    document.getElementById('editHargaDus').value = p.hargaDus || '';
+    document.getElementById('editSatuanBesar').value = p.satuanBesar || 'Dus';
+    document.getElementById('editModalBeli').value = p.modal !== undefined && p.modal !== null ? p.modal : '';
+    document.getElementById('editHargaSatuan').value = p.hargaSatuan !== undefined && p.hargaSatuan !== null ? p.hargaSatuan : '';
+    document.getElementById('editHargaGrosir').value = p.hargaGrosir !== undefined && p.hargaGrosir !== null ? p.hargaGrosir : '';
+    document.getElementById('editMinGrosir').value = p.minGrosir !== undefined && p.minGrosir !== null ? p.minGrosir : '';
+    document.getElementById('editHargaDus').value = p.hargaDus !== undefined && p.hargaDus !== null ? p.hargaDus : '';
+    document.getElementById('editIsiPerDus').value = p.isiPerDus !== undefined && p.isiPerDus !== null ? p.isiPerDus : '';
+    document.getElementById('editStokBarang').value = p.stok !== undefined && p.stok !== null ? p.stok : '';
 
     document.getElementById('penutupModalEdit').style.display = 'block';
     document.getElementById('kotakModalEdit').style.display = 'block';
@@ -396,18 +413,24 @@ async function simpanPerubahanProduk() {
     if (indeksProdukSedangEdit === null) return;
     const p = produkData[indeksProdukSedangEdit];
 
+    const namaInput = document.getElementById('editNamaBarang').value.trim();
+    if (!namaInput) {
+        alert("Nama barang tidak boleh kosong!");
+        return;
+    }
+
     const dataSimpan = {
         barisAsliDiSheet: p.barisAsliDiSheet,
-        nama: p.nama,
-        stok: Number(document.getElementById('editStok').value) || 0,
-        hargaSatuan: Number(document.getElementById('editHargaSatuan').value) || 0,
-        hargaGrosir: Number(document.getElementById('editHargaGrosir').value) || 0,
-        hargaDus: Number(document.getElementById('editHargaDus').value) || 0,
-        satuanBesar: p.satuanBesar || 'Dus',
-        modal: p.modal || 0,
-        minGrosir: p.minGrosir || 0,
-        isiPerDus: p.isiPerDus || 0,
-        foto: p.foto || ''
+        nama: namaInput,
+        satuanBesar: document.getElementById('editSatuanBesar').value.trim() || "Dus",
+        modal: document.getElementById('editModalBeli').value !== '' ? Number(document.getElementById('editModalBeli').value) : null,
+        hargaSatuan: document.getElementById('editHargaSatuan').value !== '' ? Number(document.getElementById('editHargaSatuan').value) : null,
+        hargaGrosir: document.getElementById('editHargaGrosir').value !== '' ? Number(document.getElementById('editHargaGrosir').value) : null,
+        minGrosir: document.getElementById('editMinGrosir').value !== '' ? Number(document.getElementById('editMinGrosir').value) : null,
+        hargaDus: document.getElementById('editHargaDus').value !== '' ? Number(document.getElementById('editHargaDus').value) : null,
+        isiPerDus: document.getElementById('editIsiPerDus').value !== '' ? Number(document.getElementById('editIsiPerDus').value) : null,
+        stok: document.getElementById('editStokBarang').value !== '' ? Number(document.getElementById('editStokBarang').value) : null,
+        foto: p.foto || '' // Tetap menggunakan foto lama yang tersimpan di sheet
     };
 
     document.getElementById('statusCek').textContent = "⏳ Menyimpan produk...";
