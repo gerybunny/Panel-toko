@@ -73,7 +73,6 @@
         .grup-tombol-item { display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #eee; flex-wrap: wrap; }
         .btn-aksi { border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; }
         .btn-proses { background: #ff9800; color: white; }
-        .btn-selesai { background: #28a745; color: white; }
         .btn-cetak { background: #128C7E; color: white; }
         .btn-hapus-satuan { background: #dc3545; color: white; }
         .btn-hapus-semua { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
@@ -186,7 +185,7 @@
     <div class="scroll-view-container" style="max-height:300px;" id="isiModalBarangHabis"></div>
 </div>
 
-<!-- MODAL EDIT PRODUK (KOLOM DILENGKAPI SAMA PERSIS SEPERTI WEB TOKO UTAMA) -->
+<!-- MODAL EDIT PRODUK -->
 <div id="penutupModalEdit" class="penutup-modal" onclick="tutupModalEdit()"></div>
 <div id="kotakModalEdit" class="kotak-modal">
     <div class="kepala-modal-p">
@@ -430,7 +429,7 @@ async function simpanPerubahanProduk() {
         hargaDus: document.getElementById('editHargaDus').value !== '' ? Number(document.getElementById('editHargaDus').value) : null,
         isiPerDus: document.getElementById('editIsiPerDus').value !== '' ? Number(document.getElementById('editIsiPerDus').value) : null,
         stok: document.getElementById('editStokBarang').value !== '' ? Number(document.getElementById('editStokBarang').value) : null,
-        foto: p.foto || '' // Tetap menggunakan foto lama yang tersimpan di sheet
+        foto: p.foto || ''
     };
 
     document.getElementById('statusCek').textContent = "⏳ Menyimpan produk...";
@@ -492,6 +491,7 @@ function gantiTabStatus(st, btn) {
     renderRiwayat();
 }
 
+// === RENDER RIWAYAT (HANYA TOMBOL PROSES, SISA TOMBOL SELESAI DIGANTI OLEH APLIKASI KURIR) ===
 function renderRiwayat() {
     const wadah = document.getElementById('daftarRiwayat');
     const dataFiltered = riwayatData.filter(p => (p.status || 'BARU') === tabStatusAktif);
@@ -509,11 +509,11 @@ function renderRiwayat() {
             ? p.barang.map(b => `• ${b.nama} (${b.jumlah}x)`).join('<br>') 
             : "";
 
+        // Hanya tampilkan tombol Proses untuk status BARU.
+        // Untuk status DIPROSES, Admin cukup memantau karena tombol Selesai berada di Aplikasi Kurir.
         let tombolStatus = "";
         if (st === 'BARU') {
             tombolStatus = `<button class="btn-aksi btn-proses" onclick="ubahStatus(${barisKe}, 'DIPROSES')">⏳ Proses</button>`;
-        } else if (st === 'DIPROSES') {
-            tombolStatus = `<button class="btn-aksi btn-selesai" onclick="ubahStatus(${barisKe}, 'SELESAI')">✅ Selesai</button>`;
         }
 
         return `
