@@ -354,20 +354,26 @@ async function muatDataProdukAll() {
     } catch(e) {}
 }
 
-// === RENDER DAFTAR PRODUK RINGKAS (TANPA FOTO) ===
+// === RENDER DAFTAR PRODUK RINGKAS (HANYA MUNCUL SAAT DICARI) ===
 function renderDaftarProdukAdmin() {
     const wadah = document.getElementById('daftarProdukRingkas');
     const kata = document.getElementById('cariProdukAdmin').value.trim().toLowerCase();
     
+    // Jika kolom pencarian KOSONG, sembunyikan list barang
+    if (!kata) {
+        wadah.innerHTML = '<p style="text-align:center; color:#aaa; padding:15px; font-size:11px;">🔍 Ketik nama barang di atas untuk mengubah harga/stok...</p>';
+        return;
+    }
+
     if (produkData.length === 0) {
         wadah.innerHTML = '<p style="text-align:center; color:#888; padding:15px; font-size:12px;">Memuat data barang...</p>';
         return;
     }
 
-    const filtered = kata ? produkData.filter(p => (p.nama||'').toLowerCase().includes(kata)) : produkData;
+    const filtered = produkData.filter(p => (p.nama||'').toLowerCase().includes(kata));
 
     if (filtered.length === 0) {
-        wadah.innerHTML = '<p style="text-align:center; color:#888; padding:15px; font-size:12px;">Produk tidak ditemukan.</p>';
+        wadah.innerHTML = '<p style="text-align:center; color:#dc3545; padding:15px; font-size:12px;">❌ Barang "' + kata + '" tidak ditemukan.</p>';
         return;
     }
 
