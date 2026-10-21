@@ -78,6 +78,7 @@
         .btn-hapus-semua { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
         .btn-suara { background: #ff9800; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .btn-pilih-suara { background: #17a2b8; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
         .btn-habis-badge { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 
         /* MODAL POPUP */
@@ -122,7 +123,11 @@
 <div class="kartu">
     <div class="judul-bagian">
         <span>LAPORAN PENJUALAN</span>
-        <button class="btn-suara" onclick="aktifkanAudio()">🔔 Tes Suara</button>
+        <div style="display:flex; gap:4px;">
+            <input type="file" id="inputSuaraHp" accept="audio/*" style="display: none;" onchange="simpanSuaraLokal(event)">
+            <button class="btn-pilih-suara" onclick="document.getElementById('inputSuaraHp').click()">🎵 Pilih Suara HP</button>
+            <button class="btn-suara" onclick="aktifkanAudio()">🔔 Tes Suara</button>
+        </div>
     </div>
     <div class="periode-wrapper">
         <button class="btn-periode aktif" onclick="gantiPeriode('hari', this)">Hari Ini</button>
@@ -238,7 +243,49 @@ let tabStatusAktif = 'BARU';
 let jumlahSebelumnya = 0;
 let indeksProdukSedangEdit = null;
 
+// Objek Audio untuk pemutaran suara
+var audioCustom = new Audio();
+
+// Memuat suara yang pernah disimpan dari memori HP
+function muatSuaraTersimpan() {
+    var suaraTersimpan = localStorage.getItem('suaraNotifCustom');
+    if (suaraTersimpan) {
+        audioCustom.src = suaraTersimpan;
+    }
+}
+
+// Fungsi menyimpan file suara MP3 dari HP ke memori lokal browser/app
+function simpanSuaraLokal(event) {
+    var file = event.target.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var base64Audio = e.target.result;
+            audioCustom.src = base64Audio;
+            try {
+                localStorage.setItem('suaraNotifCustom', base64Audio);
+                alert("✅ Suara notifikasi berhasil diganti dan disimpan!");
+                bunyikanNotifikasi();
+            } catch(err) {
+                alert("File suara terlalu besar, coba pilih file MP3 yang ukurannya lebih kecil.");
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
 function bunyikanNotifikasi() {
+    if (audioCustom.src) {
+        audioCustom.play().catch(function(e) {
+            bunyikanBuzzerBawaan();
+        });
+    } else {
+        bunyikanBuzzerBawaan();
+    }
+}
+
+// Cadangan suara buzzer bawaan (jika belum memilih file MP3 dari HP)
+function bunyikanBuzzerBawaan() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
@@ -255,7 +302,9 @@ function bunyikanNotifikasi() {
 
 function aktifkanAudio() {
     bunyikanNotifikasi();
-    alert("Notifikasi suara aktif!");
+    if (!audioCustom.src) {
+        alert("Notifikasi suara aktif! (Gunakan tombol '🎵 Pilih Suara HP' untuk ganti ke nada MP3 pilihan Anda)");
+    }
 }
 
 async function muatData() {
@@ -660,7 +709,10 @@ async function konfirmasiHapusSemua() {
 }
 
 setInterval(muatData, 10000);
-window.onload = muatData;
+window.onload = function() {
+    muatSuaraTersimpan();
+    muatData();
+};
 </script>
 
 </body>
