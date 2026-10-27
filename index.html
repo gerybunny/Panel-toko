@@ -77,7 +77,6 @@
         .btn-hapus-satuan { background: #dc3545; color: white; }
         .btn-hapus-semua { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
-        .btn-suara { background: #ff9800; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
         .btn-habis-badge { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 
         /* MODAL POPUP */
@@ -122,9 +121,6 @@
 <div class="kartu">
     <div class="judul-bagian">
         <span>LAPORAN PENJUALAN</span>
-        <div style="display:flex; gap:4px;">
-            <button class="btn-suara" onclick="aktifkanAudio()">🔔 Tes Suara</button>
-        </div>
     </div>
     <div class="periode-wrapper">
         <button class="btn-periode aktif" onclick="gantiPeriode('hari', this)">Hari Ini</button>
@@ -240,8 +236,8 @@ let tabStatusAktif = 'BARU';
 let jumlahSebelumnya = 0;
 let indeksProdukSedangEdit = null;
 
-// Membunyikan suara notifikasi web
-function bunyikanNotifikasi() {
+// Fungsi cadangan jika perlu memicu notifikasi web (opsional)
+function bunyikanNotifikasiWeb() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
@@ -256,11 +252,6 @@ function bunyikanNotifikasi() {
     } catch(e) {}
 }
 
-function aktifkanAudio() {
-    bunyikanNotifikasi();
-    alert("🔔 Suara notifikasi web aktif!");
-}
-
 async function muatData() {
     const statusEl = document.getElementById('statusCek');
     try {
@@ -270,7 +261,7 @@ async function muatData() {
         const dataBaru = Array.isArray(json) ? json : (json.data || []);
 
         if (jumlahSebelumnya > 0 && dataBaru.length > jumlahSebelumnya) {
-            bunyikanNotifikasi();
+            bunyikanNotifikasiWeb();
             if (typeof AndroidPanel !== 'undefined' && AndroidPanel.bunyikanNotifikasiBaru) {
                 AndroidPanel.bunyikanNotifikasiBaru(dataBaru[0].namaPelanggan || "Pelanggan", "Rp " + (dataBaru[0].total||0).toLocaleString('id-ID'));
             }
