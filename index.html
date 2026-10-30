@@ -8,13 +8,9 @@
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
         body { background: #f4f6f8; color: #333; max-width: 500px; margin: 0 auto; padding: 12px; padding-bottom: 30px; }
         
-        .header { background: #128C7E; color: white; padding: 14px; border-radius: 10px; text-align: center; margin-bottom: 12px; position: relative; }
+        .header { background: #128C7E; color: white; padding: 14px; border-radius: 10px; text-align: center; margin-bottom: 12px; }
         .header h2 { font-size: 18px; margin-bottom: 4px; }
         .status-koneksi { font-size: 11px; background: rgba(255,255,255,0.2); display: inline-block; padding: 2px 8px; border-radius: 10px; }
-        
-        /* TOMBOL SETTING PRINTER DI HEADER */
-        .btn-setting-printer { position: absolute; right: 10px; top: 12px; background: rgba(255,255,255,0.25); color: white; border: none; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-        .btn-setting-printer:active { background: rgba(255,255,255,0.4); }
 
         .kartu { background: white; border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .judul-bagian { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #128C7E; display: flex; justify-content: space-between; align-items: center; }
@@ -81,6 +77,10 @@
         .btn-hapus-satuan { background: #dc3545; color: white; }
         .btn-hapus-semua { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
+        /* STYLE TOMBOL PRINTER DI PANEL PESANAN */
+        .btn-setting-printer { background: #128C7E; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .btn-setting-printer:active { opacity: 0.8; }
+
         .btn-habis-badge { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 
         /* MODAL POPUP */
@@ -120,8 +120,6 @@
 <div class="header">
     <h2>📊 PANEL PENJUALAN TOKO</h2>
     <span class="status-koneksi" id="statusCek">⏳ Menghubungkan...</span>
-    <!-- TOMBOL PILIH PRINTER BLUETOOTH -->
-    <button class="btn-setting-printer" onclick="pilihPrinterBluetooth()">🖨️ Printer</button>
 </div>
 
 <div class="kartu">
@@ -165,7 +163,8 @@
     <div class="judul-bagian">
         <span>KELOLA PESANAN</span>
         <div style="display:flex; gap:6px;">
-            <button class="btn-hapus-semua" style="background:#128C7E;" onclick="pilihPrinterBluetooth()">🖨️ Pilih Printer</button>
+            <!-- TOMBOL PRINTER SEKARANG ADA DI SINI -->
+            <button class="btn-setting-printer" onclick="pilihPrinterBluetooth()">🖨️ Printer</button>
             <button class="btn-hapus-semua" onclick="konfirmasiHapusSemua()">🗑️ Hapus Semua</button>
         </div>
     </div>
