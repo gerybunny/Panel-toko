@@ -8,9 +8,13 @@
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
         body { background: #f4f6f8; color: #333; max-width: 500px; margin: 0 auto; padding: 12px; padding-bottom: 30px; }
         
-        .header { background: #128C7E; color: white; padding: 14px; border-radius: 10px; text-align: center; margin-bottom: 12px; }
+        .header { background: #128C7E; color: white; padding: 14px; border-radius: 10px; text-align: center; margin-bottom: 12px; position: relative; }
         .header h2 { font-size: 18px; margin-bottom: 4px; }
         .status-koneksi { font-size: 11px; background: rgba(255,255,255,0.2); display: inline-block; padding: 2px 8px; border-radius: 10px; }
+        
+        /* TOMBOL SETTING PRINTER DI HEADER */
+        .btn-setting-printer { position: absolute; right: 10px; top: 12px; background: rgba(255,255,255,0.25); color: white; border: none; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .btn-setting-printer:active { background: rgba(255,255,255,0.4); }
 
         .kartu { background: white; border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .judul-bagian { font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #128C7E; display: flex; justify-content: space-between; align-items: center; }
@@ -116,6 +120,8 @@
 <div class="header">
     <h2>📊 PANEL PENJUALAN TOKO</h2>
     <span class="status-koneksi" id="statusCek">⏳ Menghubungkan...</span>
+    <!-- TOMBOL PILIH PRINTER BLUETOOTH -->
+    <button class="btn-setting-printer" onclick="pilihPrinterBluetooth()">🖨️ Printer</button>
 </div>
 
 <div class="kartu">
@@ -158,7 +164,10 @@
 <div class="kartu">
     <div class="judul-bagian">
         <span>KELOLA PESANAN</span>
-        <button class="btn-hapus-semua" onclick="konfirmasiHapusSemua()">🗑️ Hapus Semua</button>
+        <div style="display:flex; gap:6px;">
+            <button class="btn-hapus-semua" style="background:#128C7E;" onclick="pilihPrinterBluetooth()">🖨️ Pilih Printer</button>
+            <button class="btn-hapus-semua" onclick="konfirmasiHapusSemua()">🗑️ Hapus Semua</button>
+        </div>
     </div>
 
     <!-- TAB FILTER STATUS -->
@@ -236,6 +245,15 @@ let tabStatusAktif = 'BARU';
 let jumlahSebelumnya = 0;
 let indeksProdukSedangEdit = null;
 
+// === FUNGSI PILIH PRINTER BLUETOOTH ===
+function pilihPrinterBluetooth() {
+    if (typeof AndroidPanel !== 'undefined' && AndroidPanel.pilihPrinter) {
+        AndroidPanel.pilihPrinter();
+    } else {
+        alert("⚠️ Fitur 'Pilih Printer Bluetooth' hanya aktif saat dibuka melalui Aplikasi Android Toko Bp. Aman.");
+    }
+}
+
 // Fungsi cadangan jika perlu memicu notifikasi web (opsional)
 function bunyikanNotifikasiWeb() {
     try {
@@ -262,8 +280,12 @@ async function muatData() {
 
         if (jumlahSebelumnya > 0 && dataBaru.length > jumlahSebelumnya) {
             bunyikanNotifikasiWeb();
-            if (typeof AndroidPanel !== 'undefined' && AndroidPanel.bunyikanNotifikasiBaru) {
-                AndroidPanel.bunyikanNotifikasiBaru(dataBaru[0].namaPelanggan || "Pelanggan", "Rp " + (dataBaru[0].total||0).toLocaleString('id-ID'));
+            if (typeof AndroidPanel !== 'undefined') {
+                if (AndroidPanel.bunyikanNotifikasiBaru) {
+                    AndroidPanel.bunyikanNotifikasiBaru(dataBaru[0].namaPelanggan || "Pelanggan", "Rp " + (dataBaru[0].total||0).toLocaleString('id-ID'));
+                } else if (AndroidPanel.tampilkanNotifikasi) {
+                    AndroidPanel.tampilkanNotifikasi("🚨 PESANAN BARU MASUK!", (dataBaru[0].namaPelanggan || "Pelanggan") + " (Rp " + (dataBaru[0].total||0).toLocaleString('id-ID') + ")");
+                }
             }
         }
         
@@ -582,7 +604,7 @@ async function hapusRiwayatSatuan(barisKe, nama) {
     }
 }
 
-// === FUNGSI CETAK STRUK PRINTER THERMAL ===
+// === FUNGSI CETAK STRUK PRINTER THERMAL (BLUETOOTH + FALLBACK) ===
 function cetakStruk(barisKe) {
     const p = riwayatData.find(item => (item.barisKe || item.barisAsliDiSheet) === barisKe);
     if (!p) return;
@@ -612,11 +634,13 @@ TOTAL BAYAR : Rp ${(p.total||0).toLocaleString('id-ID')}
 ================================
 \n\n\n`;
 
+    // 1. Jika dibuka lewat Aplikasi Android Toko
     if (typeof AndroidPanel !== 'undefined' && AndroidPanel.cetakBluetooth) {
         AndroidPanel.cetakBluetooth(teksStruk);
         return;
     }
 
+    // 2. Jika dibuka lewat browser biasa (fallback print web)
     const areaStruk = document.getElementById('areaStruk');
     areaStruk.style.display = 'block';
     areaStruk.innerHTML = `<pre>${teksStruk}</pre>`;
