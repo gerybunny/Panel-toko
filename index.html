@@ -163,7 +163,6 @@
     <div class="judul-bagian">
         <span>KELOLA PESANAN</span>
         <div style="display:flex; gap:6px;">
-            <!-- TOMBOL PRINTER SEKARANG ADA DI SINI -->
             <button class="btn-setting-printer" onclick="pilihPrinterBluetooth()">🖨️ Printer</button>
             <button class="btn-hapus-semua" onclick="konfirmasiHapusSemua()">🗑️ Hapus Semua</button>
         </div>
@@ -280,10 +279,14 @@ async function muatData() {
         if (jumlahSebelumnya > 0 && dataBaru.length > jumlahSebelumnya) {
             bunyikanNotifikasiWeb();
             if (typeof AndroidPanel !== 'undefined') {
-                if (AndroidPanel.bunyikanNotifikasiBaru) {
-                    AndroidPanel.bunyikanNotifikasiBaru(dataBaru[0].namaPelanggan || "Pelanggan", "Rp " + (dataBaru[0].total||0).toLocaleString('id-ID'));
-                } else if (AndroidPanel.tampilkanNotifikasi) {
-                    AndroidPanel.tampilkanNotifikasi("🚨 PESANAN BARU MASUK!", (dataBaru[0].namaPelanggan || "Pelanggan") + " (Rp " + (dataBaru[0].total||0).toLocaleString('id-ID') + ")");
+                const namaPelanggan = dataBaru[0].namaPelanggan || "Pelanggan";
+                const totalBayar = "Rp " + (dataBaru[0].total||0).toLocaleString('id-ID');
+                
+                // Panggil notifikasi Android dengan Judul & Pesan yang pas
+                if (AndroidPanel.tampilkanNotifikasi) {
+                    AndroidPanel.tampilkanNotifikasi("🚨 PESANAN BARU MASUK!", `${namaPelanggan} (${totalBayar})`);
+                } else if (AndroidPanel.bunyikanNotifikasiBaru) {
+                    AndroidPanel.bunyikanNotifikasiBaru("🚨 PESANAN BARU MASUK!", `${namaPelanggan} (${totalBayar})`);
                 }
             }
         }
@@ -325,7 +328,6 @@ function renderDaftarProdukAdmin() {
     const wadah = document.getElementById('daftarProdukRingkas');
     const kata = document.getElementById('cariProdukAdmin').value.trim().toLowerCase();
     
-    // Jika kolom pencarian KOSONG, sembunyikan list barang
     if (!kata) {
         wadah.innerHTML = '<p style="text-align:center; color:#aaa; padding:15px; font-size:11px;">Ketik nama barang di atas untuk mengubah harga/stok...</p>';
         return;
