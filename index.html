@@ -27,6 +27,12 @@
         .val.omzet { color: #28a745; }
         .val.untung { color: #ff9800; }
 
+        /* REKAP KINERJA KURIR */
+        .item-rekap-kurir { background: #f8f9fa; border: 1px solid #e0e0e0; border-left: 4px solid #128C7E; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 12px; }
+        .nama-kurir-title { font-weight: bold; color: #128C7E; font-size: 13px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .baris-info-kurir { display: flex; justify-content: space-between; font-size: 11px; color: #555; margin-bottom: 2px; }
+        .rincian-barang-kurir { background: #fff; border: 1px dashed #ccc; padding: 6px; border-radius: 6px; margin-top: 4px; font-size: 11px; color: #444; }
+
         /* NAVIGASI TAB STATUS & KELOLA */
         .tab-status-container { display: flex; gap: 4px; background: #e0e0e0; padding: 4px; border-radius: 8px; margin-bottom: 10px; }
         .btn-tab { flex: 1; padding: 8px 4px; border: none; background: transparent; font-size: 11px; font-weight: bold; border-radius: 6px; cursor: pointer; color: #555; text-align: center; position: relative; }
@@ -157,6 +163,16 @@
             <div class="label">Transaksi</div>
             <div class="val" id="lapJumlah">0</div>
         </div>
+    </div>
+</div>
+
+<!-- KARTU REKAP SETORAN & KINERJA KURIR -->
+<div class="kartu">
+    <div class="judul-bagian">
+        <span>🛵 REKAP SETORAN & KINERJA KURIR</span>
+    </div>
+    <div class="scroll-view-container" style="max-height: 200px;" id="wadahRekapKurir">
+        <p style="text-align:center; color:#aaa; padding:15px; font-size:11px;">Memuat rekap kurir...</p>
     </div>
 </div>
 
@@ -310,6 +326,7 @@ async function muatData() {
 
         renderHitunganBadge();
         renderLaporan();
+        renderRekapKurir();
         renderRiwayat();
     } catch (e) {
         statusEl.textContent = "🔴 Gagal Memuat Data";
@@ -487,18 +504,21 @@ function renderHitunganBadge() {
     document.getElementById('jmlProses').textContent = jmlProses;
 }
 
-function renderLaporan() {
+function filterDataSesuaiPeriode() {
     let skrg = new Date(), batas = new Date();
     if (periodeAktif === 'hari') batas = new Date(skrg.getFullYear(), skrg.getMonth(), skrg.getDate());
     else if (periodeAktif === 'minggu') batas.setDate(skrg.getDate() - 7);
     else batas.setDate(skrg.getDate() - 30);
 
-    let filter = riwayatData.filter(r => {
+    return riwayatData.filter(r => {
         const tgl = r.tanggalSimpan ? new Date(r.tanggalSimpan) : null;
         const status = r.status || 'BARU';
         return tgl && !isNaN(tgl.getTime()) && tgl >= batas && status === 'SELESAI';
     });
+}
 
+function renderLaporan() {
+    const filter = filterDataSesuaiPeriode();
     const omzet = filter.reduce((sum, r) => sum + (Number(r.total) || 0), 0);
     const untung = filter.reduce((sum, r) => sum + (Number(r.untung) || 0), 0);
 
@@ -507,11 +527,74 @@ function renderLaporan() {
     document.getElementById('lapJumlah').textContent = filter.length;
 }
 
+// === FUNGSI HITUNG REKAP KINERJA & SETORAN KURIR ===
+function renderRekapKurir() {
+    const wadah = document.getElementById('wadahRekapKurir');
+    const filterSelesai = filterDataSesuaiPeriode();
+
+    if (filterSelesai.length === 0) {
+        wadah.innerHTML = '<p style="text-align:center; color:#888; padding:15px; font-size:11px;">Belum ada pengiriman selesai pada periode ini.</p>';
+        return;
+    }
+
+    // Kelompokkan data per nama kurir
+    const rekap = {};
+
+    filterSelesai.forEach(p => {
+        const namaKurir = p.namaKurir ? p.namaKurir.trim() : "Kurir Toko (Tanpa Nama)";
+        if (!rekap[namaKurir]) {
+            rekap[namaKurir] = {
+                jumlahPesanan: 0,
+                totalSetoran: 0,
+                daftarBarang: {}
+            };
+        }
+
+        rekap[namaKurir].jumlahPesanan += 1;
+        rekap[namaKurir].totalSetoran += Number(p.total) || 0;
+
+        // Hitung total barang per kurir
+        if (Array.isArray(p.barang)) {
+            p.barang.forEach(b => {
+                const namaB = b.nama || "Barang";
+                const jmlB = Number(b.jumlah) || 0;
+                rekap[namaKurir].daftarBarang[namaB] = (rekap[namaKurir].daftarBarang[namaB] || 0) + jmlB;
+            });
+        }
+    });
+
+    // Render HTML Rekap Kurir
+    const listKurir = Object.keys(rekap);
+    wadah.innerHTML = listKurir.map(k => {
+        const dataK = rekap[k];
+        const stringBarang = Object.keys(dataK.daftarBarang)
+            .map(namaB => `• ${namaB}: <b>${dataK.daftarBarang[namaB]}x</b>`)
+            .join(', ');
+
+        return `
+            <div class="item-rekap-kurir">
+                <div class="nama-kurir-title">
+                    <span>🛵 ${k}</span>
+                    <span style="color:#28a745;">${dataK.jumlahPesanan} Order Selesai</span>
+                </div>
+                <div class="baris-info-kurir">
+                    <span>Total Uang Setoran (COD):</span>
+                    <span style="font-weight:bold; color:#128C7E; font-size:12px;">Rp ${dataK.totalSetoran.toLocaleString('id-ID')}</span>
+                </div>
+                <div class="rincian-barang-kurir">
+                    <b>Total Barang Diantar:</b><br>${stringBarang || '-'}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 function gantiPeriode(p, btn) {
     periodeAktif = p;
     document.querySelectorAll('.btn-periode').forEach(b => b.classList.remove('aktif'));
     btn.classList.add('aktif');
     renderLaporan();
+    renderRekapKurir();
 }
 
 function gantiTabStatus(st, btn) {
@@ -540,7 +623,6 @@ function renderRiwayat() {
             ? p.barang.map(b => `• ${b.nama} (${b.jumlah}x)`).join('<br>') 
             : "";
 
-        // Penanganan info pemantauan kurir real-time
         let infoKurirTeks = "";
         if (st === 'BARU') {
             infoKurirTeks = `<div class="info-kurir-box" style="background:#fff3cd; color:#856404;">⏳ Belum Diambil Kurir</div>`;
@@ -594,6 +676,7 @@ async function ubahStatus(barisKe, statusBaru) {
 
         renderHitunganBadge();
         renderLaporan();
+        renderRekapKurir();
         renderRiwayat();
         muatData();
     } catch (e) {
@@ -692,6 +775,7 @@ async function konfirmasiHapusSemua() {
         jumlahSebelumnya = 0;
         renderHitunganBadge();
         renderLaporan();
+        renderRekapKurir();
         renderRiwayat();
         muatData();
     } catch (e) {
