@@ -27,9 +27,10 @@
         .val.omzet { color: #28a745; }
         .val.untung { color: #ff9800; }
 
-        /* REKAP KINERJA KURIR */
+        /* REKAP KINERJA KURIR DENGAN TANGGAL */
         .item-rekap-kurir { background: #f8f9fa; border: 1px solid #e0e0e0; border-left: 4px solid #128C7E; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 12px; }
-        .nama-kurir-title { font-weight: bold; color: #128C7E; font-size: 13px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .nama-kurir-title { font-weight: bold; color: #128C7E; font-size: 13px; margin-bottom: 2px; display: flex; justify-content: space-between; }
+        .sub-tgl-kurir { font-size: 10px; color: #777; margin-bottom: 4px; }
         .baris-info-kurir { display: flex; justify-content: space-between; font-size: 11px; color: #555; margin-bottom: 2px; }
         .rincian-barang-kurir { background: #fff; border: 1px dashed #ccc; padding: 6px; border-radius: 6px; margin-top: 4px; font-size: 11px; color: #444; }
 
@@ -166,7 +167,7 @@
     </div>
 </div>
 
-<!-- KARTU REKAP SETORAN & KINERJA KURIR -->
+<!-- KARTU REKAP SETORAN & KINERJA KURIR DENGAN TANGGAL -->
 <div class="kartu">
     <div class="judul-bagian">
         <span>🛵 REKAP SETORAN & KINERJA KURIR</span>
@@ -527,7 +528,7 @@ function renderLaporan() {
     document.getElementById('lapJumlah').textContent = filter.length;
 }
 
-// === FUNGSI HITUNG REKAP KINERJA & SETORAN KURIR ===
+// === FUNGSI REKAP KINERJA & SETORAN KURIR DENGAN INFO HARI & TANGGAL ===
 function renderRekapKurir() {
     const wadah = document.getElementById('wadahRekapKurir');
     const filterSelesai = filterDataSesuaiPeriode();
@@ -537,36 +538,44 @@ function renderRekapKurir() {
         return;
     }
 
-    // Kelompokkan data per nama kurir
+    // Kelompokkan data per kurir DAN tanggal
     const rekap = {};
 
     filterSelesai.forEach(p => {
         const namaKurir = p.namaKurir ? p.namaKurir.trim() : "Kurir Toko (Tanpa Nama)";
-        if (!rekap[namaKurir]) {
-            rekap[namaKurir] = {
+        
+        // Ambil tanggal mentah atau format teks tanggal dari data pesanan
+        let tglFormat = p.tanggal || "-";
+        
+        // Buat kunci unik gabungan Kurir + Tanggal agar rekap per harinya terpisah rapi
+        const kunciUnik = namaKurir + "___" + tglFormat;
+
+        if (!rekap[kunciUnik]) {
+            rekap[kunciUnik] = {
+                namaKurir: namaKurir,
+                tanggal: tglFormat,
                 jumlahPesanan: 0,
                 totalSetoran: 0,
                 daftarBarang: {}
             };
         }
 
-        rekap[namaKurir].jumlahPesanan += 1;
-        rekap[namaKurir].totalSetoran += Number(p.total) || 0;
+        rekap[kunciUnik].jumlahPesanan += 1;
+        rekap[kunciUnik].totalSetoran += Number(p.total) || 0;
 
-        // Hitung total barang per kurir
         if (Array.isArray(p.barang)) {
             p.barang.forEach(b => {
                 const namaB = b.nama || "Barang";
                 const jmlB = Number(b.jumlah) || 0;
-                rekap[namaKurir].daftarBarang[namaB] = (rekap[namaKurir].daftarBarang[namaB] || 0) + jmlB;
+                rekap[kunciUnik].daftarBarang[namaB] = (rekap[kunciUnik].daftarBarang[namaB] || 0) + jmlB;
             });
         }
     });
 
-    // Render HTML Rekap Kurir
-    const listKurir = Object.keys(rekap);
-    wadah.innerHTML = listKurir.map(k => {
-        const dataK = rekap[k];
+    // Render HTML Rekap Kurir Berdasarkan Tanggal
+    const daftarKunci = Object.keys(rekap);
+    wadah.innerHTML = daftarKunci.map(kunci => {
+        const dataK = rekap[kunci];
         const stringBarang = Object.keys(dataK.daftarBarang)
             .map(namaB => `• ${namaB}: <b>${dataK.daftarBarang[namaB]}x</b>`)
             .join(', ');
@@ -574,9 +583,10 @@ function renderRekapKurir() {
         return `
             <div class="item-rekap-kurir">
                 <div class="nama-kurir-title">
-                    <span>🛵 ${k}</span>
+                    <span>🛵 ${dataK.namaKurir}</span>
                     <span style="color:#28a745;">${dataK.jumlahPesanan} Order Selesai</span>
                 </div>
+                <div class="sub-tgl-kurir">📅 Waktu/Tanggal Tugas: <b>${dataK.tanggal}</b></div>
                 <div class="baris-info-kurir">
                     <span>Total Uang Setoran (COD):</span>
                     <span style="font-weight:bold; color:#128C7E; font-size:12px;">Rp ${dataK.totalSetoran.toLocaleString('id-ID')}</span>
@@ -604,7 +614,6 @@ function gantiTabStatus(st, btn) {
     renderRiwayat();
 }
 
-// === RENDER RIWAYAT DENGAN FITUR PEMANTAUAN KURIR ===
 function renderRiwayat() {
     const wadah = document.getElementById('daftarRiwayat');
     const dataFiltered = riwayatData.filter(p => (p.status || 'BARU') === tabStatusAktif);
