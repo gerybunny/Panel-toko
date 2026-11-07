@@ -45,7 +45,7 @@
         .scroll-view-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .scroll-view-container::-webkit-scrollbar-thumb { background: #128C7E; border-radius: 4px; }
 
-        /* CARD ITEM PESANAN */
+        /* CARD ITEM PESANAN DENGAN PEMANTAUAN KURIR */
         .riwayat-item { background: #fff; border: 1px solid #e0e0e0; border-left: 5px solid #128C7E; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; }
         .riwayat-item.st-baru { border-left-color: #dc3545; background: #fff9f9; }
         .riwayat-item.st-proses { border-left-color: #ff9800; background: #fffdf5; }
@@ -59,6 +59,19 @@
 
         .riwayat-tgl { font-size: 11px; color: #777; margin-bottom: 6px; }
         .riwayat-detail { background: #f8f9fa; padding: 6px; border-radius: 6px; margin: 6px 0; color: #444; }
+
+        .info-kurir-box {
+            margin-top: 6px;
+            padding: 4px 8px;
+            background: #eef7f6;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #128C7E;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
 
         /* KELOLA PRODUK CEPAT (TANPA FOTO) */
         .search-box-produk { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; margin-bottom: 8px; }
@@ -91,7 +104,7 @@
         .form-group-edit label { font-size: 11px; font-weight: bold; color: #555; }
         .form-group-edit input { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
 
-        /* PERBAIKAN FORMAT CETAK STRUK PRINTER THERMAL 58MM */
+        /* FORMAT CETAK STRUK PRINTER THERMAL 58MM */
         @media print {
             body * { visibility: hidden; }
             #areaStruk, #areaStruk * { visibility: visible; }
@@ -161,7 +174,7 @@
 
 <div class="kartu">
     <div class="judul-bagian">
-        <span>KELOLA PESANAN</span>
+        <span>KELOLA PESANAN & PEMANTAUAN KURIR</span>
         <div style="display:flex; gap:6px;">
             <button class="btn-setting-printer" onclick="pilihPrinterBluetooth()">🖨️ Printer</button>
             <button class="btn-hapus-semua" onclick="konfirmasiHapusSemua()">🗑️ Hapus Semua</button>
@@ -175,7 +188,7 @@
         <button class="btn-tab" onclick="gantiTabStatus('SELESAI', this)">✅ Selesai</button>
     </div>
 
-    <!-- CONTAINER DENGAN FITUR SCROLL VIEW -->
+    <!-- CONTAINER SCROLL VIEW PESANAN -->
     <div class="scroll-view-container" id="daftarRiwayat"></div>
 </div>
 
@@ -243,7 +256,6 @@ let tabStatusAktif = 'BARU';
 let jumlahSebelumnya = 0;
 let indeksProdukSedangEdit = null;
 
-// === FUNGSI PILIH PRINTER BLUETOOTH ===
 function pilihPrinterBluetooth() {
     if (typeof AndroidPanel !== 'undefined' && AndroidPanel.pilihPrinter) {
         AndroidPanel.pilihPrinter();
@@ -252,7 +264,6 @@ function pilihPrinterBluetooth() {
     }
 }
 
-// Fungsi cadangan jika perlu memicu notifikasi web (opsional)
 function bunyikanNotifikasiWeb() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -271,7 +282,6 @@ function bunyikanNotifikasiWeb() {
 async function muatData() {
     const statusEl = document.getElementById('statusCek');
     try {
-        // Ambil Riwayat Pesanan
         const res = await fetch(URL_PENYIMPANAN + "?aksi=ambilRiwayat", { cache: 'no-store' });
         const json = await res.json();
         const dataBaru = Array.isArray(json) ? json : (json.data || []);
@@ -282,7 +292,6 @@ async function muatData() {
                 const namaPelanggan = dataBaru[0].namaPelanggan || "Pelanggan";
                 const totalBayar = "Rp " + (dataBaru[0].total||0).toLocaleString('id-ID');
                 
-                // Panggil notifikasi Android dengan Judul & Pesan yang pas
                 if (AndroidPanel.tampilkanNotifikasi) {
                     AndroidPanel.tampilkanNotifikasi("🚨 PESANAN BARU MASUK!", `${namaPelanggan} (${totalBayar})`);
                 } else if (AndroidPanel.bunyikanNotifikasiBaru) {
@@ -294,7 +303,6 @@ async function muatData() {
         jumlahSebelumnya = dataBaru.length;
         riwayatData = dataBaru;
 
-        // Ambil Data Produk Semua untuk fitur Edit Cepat
         await muatDataProdukAll();
 
         statusEl.textContent = "🟢 Terhubung (" + new Date().toLocaleTimeString('id-ID') + ")";
@@ -323,7 +331,6 @@ async function muatDataProdukAll() {
     } catch(e) {}
 }
 
-// === RENDER DAFTAR PRODUK RINGKAS (HANYA MUNCUL SAAT DICARI) ===
 function renderDaftarProdukAdmin() {
     const wadah = document.getElementById('daftarProdukRingkas');
     const kata = document.getElementById('cariProdukAdmin').value.trim().toLowerCase();
@@ -514,7 +521,7 @@ function gantiTabStatus(st, btn) {
     renderRiwayat();
 }
 
-// === RENDER RIWAYAT ===
+// === RENDER RIWAYAT DENGAN FITUR PEMANTAUAN KURIR ===
 function renderRiwayat() {
     const wadah = document.getElementById('daftarRiwayat');
     const dataFiltered = riwayatData.filter(p => (p.status || 'BARU') === tabStatusAktif);
@@ -528,9 +535,20 @@ function renderRiwayat() {
         const st = p.status || 'BARU';
         const nama = p.namaPelanggan || "Pelanggan";
         const barisKe = p.barisKe || p.barisAsliDiSheet;
+        const kurir = p.namaKurir ? p.namaKurir.trim() : "";
         const barangTeks = Array.isArray(p.barang) 
             ? p.barang.map(b => `• ${b.nama} (${b.jumlah}x)`).join('<br>') 
             : "";
+
+        // Penanganan info pemantauan kurir real-time
+        let infoKurirTeks = "";
+        if (st === 'BARU') {
+            infoKurirTeks = `<div class="info-kurir-box" style="background:#fff3cd; color:#856404;">⏳ Belum Diambil Kurir</div>`;
+        } else if (st === 'DIPROSES') {
+            infoKurirTeks = `<div class="info-kurir-box" style="background:#e3f2fd; color:#0d47a1;">🛵 Dikirim oleh: <b>${kurir || 'Kurir Toko'}</b></div>`;
+        } else if (st === 'SELESAI') {
+            infoKurirTeks = `<div class="info-kurir-box" style="background:#e8f5e9; color:#2e7d32;">✅ Diselesaikan oleh: <b>${kurir || 'Kurir Toko'}</b></div>`;
+        }
 
         let tombolStatus = "";
         if (st === 'BARU') {
@@ -546,7 +564,8 @@ function renderRiwayat() {
                 <div class="riwayat-tgl">📅 ${p.tanggal || '-'}</div>
                 <div style="color:#666; font-size:11px;">📍 ${p.infoTambahan || '-'}</div>
                 <div class="riwayat-detail">${barangTeks}</div>
-                <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                ${infoKurirTeks}
+                <div style="display:flex; justify-content:space-between; margin-top:6px;">
                     <b>Total: Rp ${(p.total||0).toLocaleString('id-ID')}</b>
                     <span style="color:#ff9800; font-weight:bold;">Laba: Rp ${(p.untung||0).toLocaleString('id-ID')}</span>
                 </div>
@@ -560,7 +579,6 @@ function renderRiwayat() {
     }).join('');
 }
 
-// === FUNGSI UBAH STATUS PESANAN ===
 async function ubahStatus(barisKe, statusBaru) {
     document.getElementById('statusCek').textContent = "⏳ Memperbarui...";
     try {
@@ -583,7 +601,6 @@ async function ubahStatus(barisKe, statusBaru) {
     }
 }
 
-// === FUNGSI HAPUS SATUAN ===
 async function hapusRiwayatSatuan(barisKe, nama) {
     const yakin = confirm(`Yakin ingin menghapus riwayat pesanan dari "${nama}"?`);
     if (!yakin) return;
@@ -605,7 +622,6 @@ async function hapusRiwayatSatuan(barisKe, nama) {
     }
 }
 
-// === FUNGSI CETAK STRUK PRINTER THERMAL (BLUETOOTH + FALLBACK) ===
 function cetakStruk(barisKe) {
     const p = riwayatData.find(item => (item.barisKe || item.barisAsliDiSheet) === barisKe);
     if (!p) return;
@@ -619,6 +635,7 @@ function cetakStruk(barisKe) {
 
     let alamatBersih = p.infoTambahan || '-';
     alamatBersih = alamatBersih.replace(/https?:\/\/[^\s]+/g, '').trim();
+    const kurirTeks = p.namaKurir ? p.namaKurir.trim() : '-';
 
     const teksStruk = `
 ================================
@@ -629,6 +646,7 @@ function cetakStruk(barisKe) {
 Waktu : ${p.tanggal || '-'}
 Nama  : ${p.namaPelanggan || '-'}
 Alamat: ${alamatBersih}
+Kurir : ${kurirTeks}
 --------------------------------
 ${rincianBarang}--------------------------------
 TOTAL BAYAR : Rp ${(p.total||0).toLocaleString('id-ID')}
@@ -637,13 +655,11 @@ TOTAL BAYAR : Rp ${(p.total||0).toLocaleString('id-ID')}
 ================================
 \n`;
 
-    // 1. Jika dibuka lewat Aplikasi Android Toko
     if (typeof AndroidPanel !== 'undefined' && AndroidPanel.cetakBluetooth) {
         AndroidPanel.cetakBluetooth(teksStruk);
         return;
     }
 
-    // 2. Jika dibuka lewat browser biasa (fallback print web)
     const areaStruk = document.getElementById('areaStruk');
     areaStruk.style.display = 'block';
     areaStruk.innerHTML = `<pre>${teksStruk}</pre>`;
@@ -652,7 +668,6 @@ TOTAL BAYAR : Rp ${(p.total||0).toLocaleString('id-ID')}
     setTimeout(() => { areaStruk.style.display = 'none'; }, 1000);
 }
 
-// === FUNGSI HAPUS SEMUA RIWAYAT ===
 async function konfirmasiHapusSemua() {
     if (riwayatData.length === 0) {
         alert("Riwayat transaksi masih kosong!");
